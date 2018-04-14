@@ -1,0 +1,61 @@
+{
+	"variables": {
+		"aws_access_key_id": "{{ env `AWS_ACCESS_KEY_ID` }}",
+		"aws_secret_access_key": "{{ env `AWS_SECRET_ACCESS_KEY` }}",
+		"region": "{{ env `AWS_REGION` }}",
+
+		"image_name": "Windows Image",
+		"ami_name_prefix": "windows-base"
+	},
+	"builders": [{
+		"type": "amazon-ebs",
+
+		"access_key": "{{ user `aws_access_key_id` }}",
+		"secret_key": "{{ user `aws_secret_access_key` }}",
+		"region": "{{user `region`}}",
+		"spot_price_auto_product": "Windows (Amazon VPC)",
+
+		"instance_type": "t2.medium",
+		"associate_public_ip_address": true,
+		"user_data_file": "files/configure-source-ssh.ps1",
+		"source_ami_filter": {
+			"filters": {
+				"name": "Windows_Server-2016-English-Full-Base-*",
+				"root-device-type": "ebs",
+				"virtualization-type": "hvm"
+			},
+			"most_recent": true,
+			"owners": [
+				"801119661308"
+			]
+		},
+
+		"communicator": "ssh",
+		"ssh_timeout": "10m",
+		"ssh_username": "Administrator",
+
+		"ami_description": "{{ user `image_name` }}",
+		"ami_name": "{{ user `ami_name_prefix` }}-{{isotime \"2006-01-02-1504\"}}",
+		"ami_virtualization_type": "hvm",
+		"snapshot_tags": {
+			"Name": "{{ user `image_name` }}",
+			"OS": "Windows-2016"
+		},
+		"tags": {
+			"Name": "{{ user `image_name` }}",
+			"OS": "Windows-2016"
+		}
+	}],
+	"provisioners": [
+		{
+			"type": "powershell",
+			"inline": [
+				"echo 'Provision Things Here' | Out-File C:/test.txt"
+			]
+		},
+		{
+			"type": "powershell",
+			"script": "files/prepare-image.ps1"
+		}
+	]
+}
